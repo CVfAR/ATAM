@@ -1,0 +1,9 @@
+/*!
+@file		DataDirectory.h
+@brief		define data directory
+*/
+#pragma once
+#ifndef DATADIR
+	#include <string>
+	static std::string strData = "${CMAKE_SOURCE_DIR}/data/";
+#endif
