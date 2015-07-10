@@ -1047,8 +1047,16 @@ bool CATAM::makeMap(void)
 		}
 		else{
 			// compute middle of two frames
-			cv::Point3f middle = (cv::Point3f(mPose.tvec) + cv::Point3f(lkf.pose.tvec)) / 2.0f;
-			double distkeyframe = cv::norm(lkf.pose.tvec - mPose.tvec);
+			cv::Mat R, lkfR;
+			cv::Rodrigues(mPose.rvec, R);
+			cv::Rodrigues(lkf.pose.rvec, lkfR);
+
+			cv::Mat pos, lkfPos;
+			pos = -R.inv() * mPose.tvec;
+			lkfPos = -lkfR.inv() * lkf.pose.tvec;
+
+			cv::Point3f middle = (cv::Point3f(pos) + cv::Point3f(lkfPos)) / 2.0f;
+			double distkeyframe = cv::norm(pos - lkfPos);
 
 			struct dist3D{
 				double dist;
@@ -1183,8 +1191,18 @@ bool CATAM::mappingCriteria(void) const
 {
 	// middle point between current frame and nearest keyframe
 	const sKeyframe &nkf = mData.map.GetNearestKeyframe(mPose);
-	double distkeyframe = cv::norm(mPose.tvec - nkf.pose.tvec);
-	cv::Point3f middle = (cv::Point3f(mPose.tvec) + cv::Point3f(nkf.pose.tvec)) / 2.0f;
+	
+	// compute camera location in world coordinate system
+	cv::Mat R, nkfR;
+	cv::Rodrigues(mPose.rvec, R);
+	cv::Rodrigues(nkf.pose.rvec, nkfR);
+
+	cv::Mat pos, mkfPos;
+	pos = -R.inv() * mPose.tvec;
+	mkfPos = -nkfR.inv() * nkf.pose.tvec;
+
+	double distkeyframe = cv::norm(pos - mkfPos);
+	cv::Point3f middle = (cv::Point3f(pos) + cv::Point3f(mkfPos)) / 2.0f;
 
 	// select median of mapped points
 	struct dist3D{
