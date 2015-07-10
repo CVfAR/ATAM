@@ -242,7 +242,7 @@ void CATAM::mainLoop(void)
 		++mFrameNumber;
 
 		// user's operation
-		if (operation()){
+		if (operation(cv::waitKey(1))){
 			break;
 		}
 
@@ -261,12 +261,11 @@ void CATAM::mainLoop(void)
 
 /*!
 @brief		user's operation
+@param[in]	input key
 @retval		ESC is pressed or not
 */
-bool CATAM::operation(void)
+bool CATAM::operation(const int key)
 {
-	int key = cv::waitKey(1);
-
 	if (key == ' ' || mMouse == ' '){		// change state
 		changeState();
 	}

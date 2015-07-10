@@ -42,7 +42,7 @@ private:
 	void generateButton(void);
 	void mouse(int event, int x, int y, int flags);
 	static void mousedummy(int event, int x, int y, int flags, void* param);
-	bool operation(void);
+	bool operation(const int key);
 
 	// process
 	void mainLoop(void);
