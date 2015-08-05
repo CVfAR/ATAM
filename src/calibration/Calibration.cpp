@@ -13,7 +13,7 @@ CCalibration::CCalibration()
 	// define size of calibration board and its pattern
 #ifdef CHESSBOARD
 	mPattern = cv::Size(9, 6);
-	mSize = 25.f;
+	mSize = 100.f;
 #else
 	mPattern = cv::Size(4, 11);
 	mSize = 34.f;
@@ -23,7 +23,7 @@ CCalibration::CCalibration()
 	for (int i = 0; i < mPattern.height; ++i){
 		for (int j = 0; j < mPattern.width; j++){
 #ifdef CHESSBOARD
-			mVpt3d.push_back(cv::Point3f(float(j)*mSize, float(i)*mSize, 0));
+			mVpt3d.push_back(cv::Point3f(float(i)*mSize, float(j)*mSize, 0));
 #else
 			float size = mSize / 2.0f;
 			mVpt3d.push_back(cv::Point3f(float((2 * j + i % 2))*size, float(i)*size, 0));
