@@ -1,7 +1,6 @@
 # About
 
-Abecedary tracking and mapping (ATAM): a toolkit for tracking competition  
-Hideaki Uchiyama, Takafumi Taketomi, Sei Ikeda and Joao Paulo Silva do Monte Lima  
+Hideaki Uchiyama, Takafumi Taketomi, Sei Ikeda and Joao Paulo Silva do Monte Lima, "Abecedary Tracking and Mapping: a Toolkit for Tracking Competitions," Proceedings of the 14th IEEE International Symposium on Mixed and Augmented Reality, pp.xx-xx, 2015.
 
 # Dependency
 - OpenCV 3.0
@@ -21,7 +20,7 @@ Hideaki Uchiyama, Takafumi Taketomi, Sei Ikeda and Joao Paulo Silva do Monte Lim
  - Set dll path (e.g. opencv/build/x64/vc12/bin if use VS 2013 and 64 bit compiler) to environment variable (PATH)
  - May need to uncheck all options for OpenCL (WITH\_OPENCL, WITH\_OPENCLAMDBLAS, WITH\_OPENCLAMDFFT, WITH\_OPENCL\_SVM) on CMake and compile OpenCV by yourself if ATAM crashes (especially on Mac)
 - cvsba (cvsba-1.0.0.tgz) from http://www.uco.es/investiga/grupos/ava/node/39
- - UNIX users may need #include<limits> in utils/test_cvsba.cpp
+ - UNIX users may need #include&lt;limits&gt; in utils/test_cvsba.cpp
  - UNIX users can install CLAPACK as instructed on the web
 - CLAPACK (clapack-3.2.1-CMAKE.tgz) from http://www.netlib.org/clapack/
 
@@ -95,15 +94,10 @@ Hideaki Uchiyama, Takafumi Taketomi, Sei Ikeda and Joao Paulo Silva do Monte Lim
 
 # Tips for ATAM
 
-- Notes
- - If initialization failed, translate more and press space again
- - If tracking failed, move the camera to fit edges
- - Once run and close ATAM, can modify parameters in ATAM/data/params.xml
-
 - Dot colors
  - Blue: new points
  - White: mapped points
- - Red(small): projected mapped points
+ - Red (small): projected mapped points
 		
 - Parameters
  - MAXPTS: number of keypoints by ORB
@@ -131,4 +125,11 @@ as
 Number of challenge points  
 ID1 X1 Y1 Z1  
 ID2 X2 Y2 Z2  
-...
+ID3 X3 Y3 Z3  
+ID4 X4 Y4 Z4
+
+
+- Notes
+ - If initialization failed, translate more and press space again
+ - If tracking failed, move the camera to fit edges
+ - Once run and close ATAM, can modify parameters in ATAM/data/params.xml 
