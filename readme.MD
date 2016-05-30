@@ -3,26 +3,24 @@
 Hideaki Uchiyama, Takafumi Taketomi, Sei Ikeda and Joao Paulo Silva do Monte Lima, "Abecedary Tracking and Mapping: a Toolkit for Tracking Competitions," Proceedings of the 14th IEEE International Symposium on Mixed and Augmented Reality, pp.xx-xx, 2015.
 
 # Dependency
-- OpenCV 3.0
-- cvsba (if use bundle adjustment)
-- LAPACK (if use bundle adjustment)
+- OpenCV 3.1
+- cvsba
+- LAPACK
 
-# Installation (on Windows)
+# Installation on Windows
 ## 1. Download and install following software
 
 - CMake 2.8 (or other versions may be OK) from http://www.cmake.org/
-- Visual Studio 2013 (or other IDEs may be OK)
-		
+- Visual Studio 2015 (or other IDEs may be OK)
 
-## 2. Download and unzip following software somewhere (e.g. in C:/...../3rdparty)
 
-- OpenCV 3.0 from http://opencv.org/
- - Set dll path (e.g. opencv/build/x64/vc12/bin if use VS 2013 and 64 bit compiler) to environment variable (PATH)
- - May need to uncheck all options for OpenCL (WITH\_OPENCL, WITH\_OPENCLAMDBLAS, WITH\_OPENCLAMDFFT, WITH\_OPENCL\_SVM) on CMake and compile OpenCV by yourself if ATAM crashes (especially on Mac)
-- cvsba (cvsba-1.0.0.tgz) from http://www.uco.es/investiga/grupos/ava/node/39
- - UNIX users may need #include&lt;limits&gt; in utils/test_cvsba.cpp
- - UNIX users can install CLAPACK as instructed on the web
+## 2. Download and unzip following software somewhere (e.g. in C:/3rdparty)
+
+- OpenCV 3.1 from http://opencv.org/
+	- Set dll path (e.g. opencv/build/x64/vc14/bin if use VS 2015 and 64 bit compiler) to environment variable (PATH)
 - CLAPACK (clapack-3.2.1-CMAKE.tgz) from http://www.netlib.org/clapack/
+- cvsba (cvsba-1.0.0.tgz) from http://www.uco.es/investiga/grupos/ava/node/39
+
 
 ## 3. Compile CLAPACK with CMake
 
@@ -40,19 +38,16 @@ Hideaki Uchiyama, Takafumi Taketomi, Sei Ikeda and Joao Paulo Silva do Monte Lim
 - Press Configure
 - Set OpenCV_DIR to opencv/build/
 - Press Configure
-- Set LAPACK\_LIB to clapack-3.2.1-CMAKE/build/SRC/Release/lapack.lib (not necessary if not check USE\_BA)
-- Set BLAS\_LIB to clapack-3.2.1-CMAKE/build/BLAS/SRC/Release/blas.lib (not necessary if not check USE\_BA)
-- Set F2C\_LIB to clapack-3.2.1-CMAKE/build/F2CLIBS/libf2c/Release/libf2c.lib (not necessary if not check USE\_BA)
+- Set CLAPACK_DIR to clapack-3.2.1-CMAKE/build/
 - Press Configure and Generate
 
 ### options for ATAM
 - Check SHOW_LOG if output log on console window
-- Check USE_BA if use bundle adjustment (BA)
 - Check USE_MULTITHREAD if use multi threads for BA
 - Check USE_CHESSBOARD if use a chessboard for camera calibration, otherwise a dot pattern
 - Check USE_PGR if use a point grey camera, otherwise use a camera with OpenCV
- - Set PGR\_INCLUDE\_DIR to C:/Program Files/Point Grey Research/FlyCapture2/include (depends on where installed Flycapture)
- - Set PGR\_LIB to C:/Program Files/Point Grey Research/FlyCapture2/lib64/FlyCapture2.lib (depends on where installed Flycapture)
+ - Set PGR\_INCLUDE\_DIR to C:/Program Files/Point Grey Research/FlyCapture2/include (depends on where Flycapture is installed)
+ - Set PGR\_LIB to C:/Program Files/Point Grey Research/FlyCapture2/lib64/FlyCapture2.lib (depends on where Flycapture is installed)
 
 
 # How to use (on Windows)
@@ -74,7 +69,7 @@ Hideaki Uchiyama, Takafumi Taketomi, Sei Ikeda and Joao Paulo Silva do Monte Lim
 ## 3. ATAM
 - Open ATAM/build/proj/ATAM/ATAM.sln and modify
  - line 95 in cvsba.cpp as  
-   int nconstframes = imagePoints.size() > 2 ? 2 : 0; //mcon
+   int nconstframes = imagePoints.size() > 2 ? 2 : 1; //mcon
  - line 233 in cvsba.cpp as  
    //throw cv::Exception(8888, "Error occured during Sba optimization", "Sba::run", \_\_FILE\_\_, \_\_LINE\_\_);  
    return -1;
@@ -104,12 +99,11 @@ Hideaki Uchiyama, Takafumi Taketomi, Sei Ikeda and Joao Paulo Silva do Monte Lim
  - LEVEL: number of pyramid levels for ORB
  - DESCDIST: maximum distance between two ORB descriptors for judging as a correct match (between 0 and 256)
  - BASEANGLE: criterion for adding a new keyframe (degree)
- - BAKEYFRAMES: number of keyframes for local bundle adjustment (more than 2)
+ - BAKEYFRAMES: number of keyframes for local bundle adjustment (e.g. more than 2)
  - PROJERR: maximum reprojection error for inlier (pixel)
- - MINPTS: minimum number of points for judging as stable tracking (not good if less than 20)
+ - MINPTS: minimum number of points for judging as stable tracking (e.g. not good if less than 20)
  - PATCHSIZE: size of patch for KLT (pixel)
  - MATCHKEYFRAME: minimum inlier ratio (inliers/matches) for keypoint matching in matching with keyframes (between 0 and 1)
- - GOODINIT: minimum inlier ratio for initial triangulation (between 0 and 1)
  - RELOCALHIST: number of last keyframes used for relocalization (more than 1)
  - USEVIDEO: 1 if use video, otherwise 0 (use video saved with CameraCapture)
  - VIDEONAME: file name for video

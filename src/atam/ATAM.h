@@ -10,14 +10,11 @@
 
 #include "opencv2/opencv.hpp"
 
-#include "Cam.h"
 #include "ATAMData.h"
+#include "Cam.h"
 #include "PointDetector.h"
 #include "Calibration.h"
-
-#ifdef WITHBA
 #include "cvsba.h"
-#endif
 
 /*!
 @class		CATAM
@@ -27,7 +24,6 @@ class CATAM
 {
 public:
 	CATAM();
-	~CATAM();
 
 public:
 	void Start(void);
@@ -36,19 +32,9 @@ private:
 	// setting
 	bool init(void);
 
-	// interface
-	void drawButton(cv::Mat &img);
-	void checkButton(const int x, const int y);
-	void generateButton(void);
-	void mouse(int event, int x, int y, int flags);
-	static void mousedummy(int event, int x, int y, int flags, void* param);
-	bool operation(const int key);
-
 	// process
 	void mainLoop(void);
 	void process(void);
-	void draw(cv::Mat &img);
-	void drawProcess(cv::Mat &img) const;
 	void startInit(void);
 	void startTAM(void);
 	void changeState(void);
@@ -56,46 +42,53 @@ private:
 
 	// tracking
 	bool setKeyframe(void);
-	void projectMap(void);
 	bool checkInsideImage(const cv::Point2f &pt) const;
 	int trackFrame(void);
-	void drawTrack(cv::Mat &img) const;
 	bool matchKeyframe(void);
 	bool computePose(void);
 
 	// mapping
-	void computePosefromE(const std::vector<cv::Point2f> &vpt1, const std::vector<cv::Point2f> &vpt2, cv::Mat &rvec, cv::Mat &tvec) const;
-	void triangulate(const std::vector<cv::Point2f> &vpt1, const std::vector<cv::Point2f> &vpt2, const sPose &pose1, const sPose &pose2, std::vector<cv::Point3f> &vpt3d) const;
-	bool initialBA(std::vector<cv::Point3f> &vpt3d,	const std::vector<cv::Point2f> &vundist1, const std::vector<cv::Point2f> &vundist2, sPose &pose1, sPose &pose2);
+	void computePosefromE(const std::vector<cv::Point2f> &vUnPt1, const std::vector<cv::Point2f> &vUnPt2, cv::Mat &rvec, cv::Mat &tvec) const;
+	void triangulate(const std::vector<cv::Point2f> &vUnPt1, const std::vector<cv::Point2f> &vUnPt2, const sPose &pose1, const sPose &pose2, std::vector<cv::Point3f> &vpt3d) const;
+	bool initialBA(std::vector<cv::Point3f> &vPt3d,	const std::vector<cv::Point2f> &vDist1, const std::vector<cv::Point2f> &vDist2, sPose &pose1, sPose &pose2);
 	bool makeMap(void);
-	void drawMap(cv::Mat &img) const;
-	void drawGrid(cv::Mat &img) const;
 	bool mappingCriteria(void) const;
 	void mapping(void);
 	void trackAndMap(void);
-	void initialize(void);
+	void whileInitialize(void);
+	void BA(void);
 
-	// about challenge points for competition
-	void loadChallenge(const std::string &name);
-	void drawChallenge(cv::Mat &img);
-	
 	// registration with world coordinate system
 	void transformToWorld(const sPose &local, sPose &world) const;
 	bool getWorldCoordinate(sPose &pose) const;
 	void registerWorld(void);
-
-	// local BA
-	void localBA(void);
 
 	// relocalization
 	void changeRelocalImage(void);
 	void relocalize(void);
 	void drawView(cv::Mat &img);
 
+	// challenge points for competition
+	void loadChallenge(const std::string &name);
+	void drawChallenge(cv::Mat &img);
+
+	// GUI
+	void drawButton(cv::Mat &img);
+	void checkButton(const int x, const int y);
+	void generateButton(void);
+	void mouse(int event, int x, int y, int flags);
+	static void mousedummy(int event, int x, int y, int flags, void* param);
+	bool operation(const int key);
+	void draw(cv::Mat &img);
+	void drawProcess(cv::Mat &img) const;
+	void drawMap(cv::Mat &img) const;
+	void drawGrid(cv::Mat &img) const;
+	void drawTrack(cv::Mat &img) const;
+
 private:
 	CCam mCam;			//!< camera
 	cv::Mat mImg;		//!< current image (from camera)
-	cv::Mat mGimg;		//!< current image (gray scale)
+	cv::Mat mGImg;		//!< current image (gray scale)
 	sPose mPose;		//!< current local camera pose
 	sPose mWPose;		//!< current world camera pose
 	int mFrameNumber;	//!< frame number
@@ -105,7 +98,7 @@ private:
 	CPointDetector mDetector;	//!< keypoint detector
 
 	std::string mText;	//!< instruction on image
-	double mFPS;			//!< frame per second in main process
+	double mFPS;		//!< frame per second in main process
 
 	enum STATE{
 		STOP, INIT, TAM, RELOCAL, CLOSE
@@ -114,9 +107,7 @@ private:
 
 	sATAMData mData;	//!< all data in ATAM
 	
-#ifdef WITHBA
-	cvsba::Sba mBA;		//!< bundle adjustment (BA)
-#endif
+	cvsba::Sba mBA;			//!< bundle adjustment (BA)
 	bool mDoingBA;			//!< doing BA or not
 	std::mutex mBAMutex;	//!< for BA
 
@@ -131,6 +122,6 @@ private:
 		int key;
 		std::string name;
 	};
-	std::vector<button> mvButton;	//!< button information
+	std::vector<button> mvButton;	//!< for button input
 	int mMouse;						//!< for mouse input
 };

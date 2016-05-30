@@ -21,9 +21,9 @@
 void captureImages(std::vector<cv::Mat> &vimg)
 {
 	CCam cam;
-	
+
 	int width, height, channel;
-	if (!cam.Open(width, height, channel)){
+	if (!cam.Open(width, height, channel)) {
 		printf("camera error\n");
 		exit(1);
 	}
@@ -38,27 +38,31 @@ void captureImages(std::vector<cv::Mat> &vimg)
 
 	CCalibration calib;
 
-	while (1){
+	while (1) {
 
 		// capture images
 		cam.Get(im);
 		cv::Mat detect = im.clone();
 
-		// extract corners
-		std::vector< cv::Point2f > tmp;
-		bool found = calib.DetectCorners(detect, tmp);
-		if (found){
-			calib.DrawCorners(detect, tmp);
-		}
-		
 		cv::imshow(window_name, detect);
 
 		int key = cv::waitKey(10);
-		if (key == ' '){	// save image
-			vimg.push_back(im.clone());
-            printf("image:%02d saved\n", vimg.size());
+		if (key == ' ') {	// save image
+							// extract corners
+			std::vector< cv::Point2f > tmp;
+			cv::Mat gDetect;
+			cv::cvtColor(detect, gDetect, cv::COLOR_BGR2GRAY);
+
+			bool found = calib.DetectCorners(gDetect, tmp);
+			if (found) {
+				calib.DrawCorners(detect, tmp);
+				vimg.push_back(im.clone());
+				printf("image:%02d saved\n", int(vimg.size()));
+				cv::imshow(window_name, detect);
+				cv::waitKey(1000);
+			}
 		}
-		else if (key == 0x1b){	// quit
+		else if (key == 'q') {	// quit
 			break;
 		}
 	}
@@ -85,12 +89,14 @@ bool calibrate(std::vector<cv::Mat> &vimg, cv::Mat &intrinsic, cv::Mat &distorti
 	CCalibration calib;
 
 	// for each image
-	for (int i = 0, iend = int(vimg.size()); i < iend; ++i){
+	for (int i = 0, iend = int(vimg.size()); i < iend; ++i) {
 
 		// extract corners
 		std::vector< cv::Point2f > tmp;
-		bool found = calib.DetectCorners(vimg[i], tmp);
-		if (found){
+		cv::Mat gIm;
+		cv::cvtColor(vimg[i], gIm, cv::COLOR_BGR2GRAY);
+		bool found = calib.DetectCorners(gIm, tmp);
+		if (found) {
 			imagePoints.push_back(tmp);
 
 			calib.DrawCorners(vimg[i], tmp);
@@ -101,7 +107,7 @@ bool calibrate(std::vector<cv::Mat> &vimg, cv::Mat &intrinsic, cv::Mat &distorti
 
 	cv::destroyWindow(window_name);
 
-	if (imagePoints.size() == 0){
+	if (imagePoints.size() == 0) {
 		printf("calibration failed\n");
 		return false;
 	}
@@ -120,8 +126,8 @@ int main(int argc, char **argv)
 
 	captureImages(vimg);
 
-	cv::Mat intrinsic, distortion;	
-    if (calibrate(vimg, intrinsic, distortion)){
+	cv::Mat intrinsic, distortion;
+	if (calibrate(vimg, intrinsic, distortion)) {
 		CCam camera;
 		camera.A = intrinsic;
 		camera.D = distortion;

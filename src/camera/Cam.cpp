@@ -35,13 +35,14 @@ bool CCam::SaveVideo(
 	const float fps
 	)
 {
+	bool isOpen;
 #ifdef USEPGR
-	bool isopen = mPGRCap.IsConnected();
+	isOpen = mPGRCap.IsConnected();
 #else
-	bool isopen = mCap.isOpened();
+	isOpen = mCap.isOpened();
 #endif
 
-	if (isopen){	// if camera opened
+	if (isOpen){	// if camera opened
 
 		mSave = true;
 		mName = name;
@@ -58,16 +59,16 @@ bool CCam::SaveVideo(
 		return mWriter.open(mName, int(NULL), fps, cv::Size(mWidth, mHeight), isColor);
 	}
 	else{
-		return isopen;
+		return false;
 	}
 }
 
 /*!
 @brief		open video
-@param[in]	name		file name
-@param[out]	width		image width
-@param[out]	height		image height
-@param[out]	channel		num of channels
+@param[in]	name	file name
+@param[out]	w		image width
+@param[out]	h		image height
+@param[out]	c		num of channels
 @retval		successed or not
 */
 bool CCam::OpenVideo(
@@ -80,9 +81,9 @@ bool CCam::OpenVideo(
 	mVideo = true;
 	mName = name;
 
-	bool isopen = mCap.open(mName);
+	bool isOpen = mCap.open(mName);
 
-	if (isopen){
+	if (isOpen){
 		mCap >> mImg;
 
 		mWidth = w = mImg.cols;
@@ -92,14 +93,14 @@ bool CCam::OpenVideo(
 		mSize = mHeight*(int)mImg.step;
 	}
 
-	return isopen;
+	return isOpen;
 }
 
 /*!
 @brief		open camera
-@param[out]	width		image width
-@param[out]	height		image height
-@param[out]	channel		num of channels
+@param[out]	w	image width
+@param[out]	h	image height
+@param[out]	c	num of channels
 @retval		successed or not
 */
 bool CCam::Open(
@@ -113,25 +114,15 @@ bool CCam::Open(
 
 		FlyCapture2::Error error;
 
-		// check cameras
-		FlyCapture2::BusManager busMgr;
-		unsigned int numCameras;
-		error = busMgr.GetNumOfCameras(&numCameras);
-		if (error != FlyCapture2::PGRERROR_OK || numCameras != 1){
-			fprintf(stderr, "0 or multiple cameras found\n");
-			return false;
-		}
-
-		// open one camera
-		FlyCapture2::PGRGuid guid;
-		error = busMgr.GetCameraFromIndex(0, &guid);
-		if (error != FlyCapture2::PGRERROR_OK){
-			return false;
-		}
-
 		// connect to a camera
-		error = mPGRCap.Connect(&guid);
+		error = mPGRCap.Connect(0);
 		if (error != FlyCapture2::PGRERROR_OK){
+			return false;
+		}
+
+		FlyCapture2::CameraInfo camInfo;
+		error = mPGRCap.GetCameraInfo(&camInfo);
+		if (error != FlyCapture2::PGRERROR_OK) {
 			return false;
 		}
 
@@ -149,8 +140,8 @@ bool CCam::Open(
 		}
 
 		// VGA
-		w = mWidth = 640;		// image width
-		h= mHeight = 480;		// image height
+		w = mWidth = raw.GetCols() / 2;		// image width
+		h= mHeight = raw.GetRows() / 2;		// image height
 		c= mChannel = 3;		// color camera
 
 		mSize = mWidth*mHeight*mChannel;
@@ -166,7 +157,7 @@ bool CCam::Open(
 	if (!mCap.isOpened()){
 
 		if (!mCap.open(mDeviceID)){		// if opening failed
-			fprintf(stderr, "Cam ID %d not found\n", mDeviceID);
+			printf("Cam ID %d not found\n", mDeviceID);
 			return false;
 		}
 
@@ -181,8 +172,8 @@ bool CCam::Open(
 			mCap >> mImg;
 			++count;
 
-			if (count > 50){		// if retrieval failed
-				fprintf(stderr, "Cannot retrieve images\n");
+			if (count > 10){		// if retrieval failed
+				printf("Cannot retrieve images\n");
 				return false;
 			}
 		}
@@ -213,12 +204,12 @@ void CCam::Close(void)
 
 		error = mPGRCap.StopCapture();
 		if (error != FlyCapture2::PGRERROR_OK){
-			fprintf(stderr, "error at%s\n", __FUNCTION__);
+			fprintf(stderr, "error at %d in %s\n", __LINE__, __FUNCTION__);
 		}
 
 		error = mPGRCap.Disconnect();
 		if (error != FlyCapture2::PGRERROR_OK){
-			fprintf(stderr, "error at%s\n", __FUNCTION__);
+			fprintf(stderr, "error at %d in %s\n", __LINE__, __FUNCTION__);
 		}
 	}
 #endif
@@ -249,17 +240,20 @@ bool CCam::Get(cv::Mat &img)
 
 		FlyCapture2::Image raw;
 		error = mPGRCap.RetrieveBuffer(&raw);
+		if (error != FlyCapture2::PGRERROR_OK) {
+			fprintf(stderr, "error at %d in %s\n", __LINE__, __FUNCTION__);
+		}
 
 		FlyCapture2::Image img;
 		error = raw.Convert(FlyCapture2::PIXEL_FORMAT_BGR, &img);
+		if (error != FlyCapture2::PGRERROR_OK) {
+			fprintf(stderr, "error at %d in %s\n", __LINE__, __FUNCTION__);
+		}
 
 		cv::Mat cvImg(cv::Size(raw.GetCols(), raw.GetRows()), CV_8UC3);
-		int buffer_size = img.GetCols() * img.GetRows() * 3;
-		memcpy_s(cvImg.data, buffer_size, img.GetData(), buffer_size);
+		int bufferSize = sizeof(unsigned char) * img.GetCols() * img.GetRows() * 3;
+		memcpy_s(cvImg.data, bufferSize, img.GetData(), bufferSize);
 		cv::resize(cvImg, mImg, mImg.size());
-
-		memcpy_s(mImg.data, mSize, img.GetData(), mSize);
-
 	}
 	else{
 		return false;

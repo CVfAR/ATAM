@@ -13,7 +13,7 @@
 
 /*!
 @class		CCam
-@brief		camera
+@brief		camera interface
 */
 class CCam
 {
@@ -46,11 +46,6 @@ private:
 
 	cv::Mat mImg;	//!< image
 
-	cv::VideoWriter mWriter;	//!< opencv video class
-	std::string mName;			//!< file name
-	bool mSave;		//!< save or not
-	bool mVideo;	//!< video or not
-
 	cv::Mat mMapx, mMapy;	//!< map for undistortion
 	bool mUndist;			//!< use undistorted image or not
 
@@ -58,6 +53,11 @@ private:
 	int mHeight;	//!< image height
 	int mChannel;	//!< number of channels
 	int mSize;		//!< image data size (width*height*channels)
+
+	cv::VideoWriter mWriter;	//!< opencv video class
+	std::string mName;			//!< file name
+	bool mSave;		//!< save or not
+	bool mVideo;	//!< video or not
 };
 
 

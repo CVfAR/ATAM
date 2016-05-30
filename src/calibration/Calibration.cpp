@@ -33,13 +33,6 @@ CCalibration::CCalibration()
 }
 
 /*!
-@brief		destructor
-*/
-CCalibration::~CCalibration()
-{
-}
-
-/*!
 @brief		pose estimation with respect to calibration board
 @param[in]	img			image
 @param[in]	A			camera parameters
@@ -47,7 +40,7 @@ CCalibration::~CCalibration()
 @param[out]	rvec		rotation vector
 @param[out]	tvec		translation vector
 */
-bool CCalibration::PoseEstimation(
+bool CCalibration::EstimatePose(
 	const cv::Mat &img,
 	const cv::Mat &A,
 	const cv::Mat &D,
@@ -56,27 +49,12 @@ bool CCalibration::PoseEstimation(
 	) const
 {
 	// detect corners
-	std::vector<cv::Point2f> vpt2d;
-	bool found = DetectCorners(img, vpt2d);
+	std::vector<cv::Point2f> vPt2d;
+	bool found = DetectCorners(img, vPt2d);
 
 	if (found){
-
 		// compute camera pose with respect to calibration board
-		cv::solvePnP(mVpt3d, vpt2d, A, D, rvec, tvec);
-
-		// check reprojection error
-		std::vector<cv::Point2f> vprojpt2d;
-		cv::projectPoints(mVpt3d, rvec, tvec, A, D, vprojpt2d);
-
-		double projerr = 0.0;
-		for (int i = 0, iend = int(vpt2d.size()); i < iend; ++i){
-			projerr += cv::norm(vpt2d[i] - vprojpt2d[i]);
-		}
-		projerr /= double(vpt2d.size());
-
-		if (projerr > 1.0){		// if error is large
-			found = false;
-		}
+		cv::solvePnP(mVpt3d, vPt2d, A, D, rvec, tvec);
 	}
 
 	return found;
@@ -107,25 +85,17 @@ void CCalibration::Calibrate(
 
 /*!
 @brief		detect corners
-@param[in]	img			image
+@param[in]	gImg		gray scale image
 @param[out]	vcorner		corners
 */
-bool CCalibration::DetectCorners(const cv::Mat &img, std::vector<cv::Point2f> &vcorner) const
+bool CCalibration::DetectCorners(const cv::Mat &gImg, std::vector<cv::Point2f> &vCorner) const
 {
 	bool found = false;
 
 #ifdef CHESSBOARD
-	found = cv::findChessboardCorners(img, mPattern, vcorner);
+	found = cv::findChessboardCorners(gImg, mPattern, vCorner);
 	if (found){
-		cv::Mat gimg;
-
-		if (img.channels() == 3){
-			cv::cvtColor(img, gimg, cv::COLOR_BGR2GRAY);
-		}
-		else{
-			gimg = img.clone();
-		}
-		cv::cornerSubPix(gimg, vcorner, cv::Size(11, 11), cv::Size(-1, -1), cv::TermCriteria(cv::TermCriteria::EPS + cv::TermCriteria::COUNT, 30, 0.1));
+		cv::cornerSubPix(gImg, vCorner, cv::Size(5, 5), cv::Size(-1, -1), cv::TermCriteria(cv::TermCriteria::EPS + cv::TermCriteria::COUNT, 30, 0.1));
 	}
 #else
 	found = cv::findCirclesGrid(img, mPattern, vcorner, cv::CALIB_CB_ASYMMETRIC_GRID);
@@ -139,34 +109,7 @@ bool CCalibration::DetectCorners(const cv::Mat &img, std::vector<cv::Point2f> &v
 @param[out]	img			image
 @param[in]	vcorner		corners
 */
-void CCalibration::DrawCorners(cv::Mat &img, const std::vector<cv::Point2f> &vcorner) const
+void CCalibration::DrawCorners(cv::Mat &img, const std::vector<cv::Point2f> &vCorner) const
 {
-	cv::drawChessboardCorners(img, mPattern, vcorner, true);
-}
-
-/*!
-@brief		set pattern size
-@param[in]	size	size
-*/
-void CCalibration::SetSize(const float size)
-{
-	mSize = size;
-}
-
-/*!
-@brief		return pattern size
-@retval		size
-*/
-float CCalibration::GetSize(void) const
-{
-	return mSize;
-}
-
-/*!
-@brief		return short side length
-@retval		size
-*/
-int CCalibration::GetShortSide(void) const
-{
-	return std::min(mPattern.width, mPattern.height);
+	cv::drawChessboardCorners(img, mPattern, vCorner, true);
 }

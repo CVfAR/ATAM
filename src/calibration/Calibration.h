@@ -15,15 +15,11 @@ class CCalibration
 {
 public:
 	CCalibration();
-	~CCalibration();
 
-	bool PoseEstimation(const cv::Mat &img, const cv::Mat &A, const cv::Mat &D, cv::Mat &rvec, cv::Mat &tvec) const;
+	bool EstimatePose(const cv::Mat &img, const cv::Mat &A, const cv::Mat &D, cv::Mat &rvec, cv::Mat &tvec) const;
 	void Calibrate(const std::vector< std::vector< cv::Point2f > > &imagePoints, const cv::Size &imageSize, cv::Mat &intrinsic, cv::Mat &distortion) const;
-	bool DetectCorners(const cv::Mat &img, std::vector<cv::Point2f> &vcorner) const;
-	void DrawCorners(cv::Mat &img, const std::vector<cv::Point2f> &vcorner) const;
-	void SetSize(const float data);
-	float GetSize(void) const;
-	int GetShortSide(void) const;
+	bool DetectCorners(const cv::Mat &gImg, std::vector<cv::Point2f> &vCorner) const;
+	void DrawCorners(cv::Mat &img, const std::vector<cv::Point2f> &vCorner) const;
 
 private:
 	cv::Size mPattern;		//!< calibration pattern

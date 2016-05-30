@@ -4,13 +4,12 @@
 set( PROJ_NAME CameraCapture )
 project( ${PROJ_NAME} )
 
-# Add all files
+# internal
 file(GLOB PROJ_SOURCE *.cpp)
 file(GLOB PROJ_INCLUDE *.h)
 
-include_directories(${PROJ_SHARED_DATADIR_DIR})
+# shared
 include_directories(${PROJ_SHARED_CAMERA_DIR})
-include_directories(${OpenCV_INCLUDE_DIRS})
 
 # Target
 add_executable(
@@ -25,5 +24,5 @@ add_executable(
 target_link_libraries(
 	${PROJ_NAME}
     ${OpenCV_LIBS}
-	${CAM_LIB}
+	${CAM_LIBS}
 )

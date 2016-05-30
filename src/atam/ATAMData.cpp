@@ -38,7 +38,7 @@ sPose& sPose::operator=(const sPose& r)
 }
 
 /*!
-@brief		get rvec and tvec in M
+@brief		set rvec and tvec in M
 @param[out]	M	4 x 4 transformation matrix
 */
 void sPose::getM(cv::Mat &M) const
@@ -54,27 +54,14 @@ void sPose::getM(cv::Mat &M) const
 }
 
 /*!
-@brief		get  rotation matrix
-@param[out]	R	4 x 4 transformation matrix
+@brief		set  rotation matrix
+@param[out]	R	3 x 3 transformation matrix
 */
 void sPose::getR(cv::Mat &R) const
 {
 	cv::Rodrigues(rvec, R);
 }
 
-/*!
-@brief		set rvec and tvec from M
-@param[in]	m	4 x 4 transformation matrix
-*/
-void sPose::setFromM(const cv::Mat &M)
-{
-	cv::Mat r;
-
-	M(cv::Rect(0, 0, 3, 3)).copyTo(r);
-	cv::Rodrigues(r, rvec);
-
-	M(cv::Rect(3, 0, 1, 3)).copyTo(tvec);
-}
 
 /*!
 @brief	for debugging
@@ -94,29 +81,41 @@ sTrack::sTrack(void)
 }
 
 /*!
-@brief	clear data
+@brief	constructor
 */
-void sKeyframe::clear(void)
+sKeyframe::sKeyframe(void)
 {
-	vkptID.clear();
-	vkpt.clear();
-	vdesc.release();
+	clear();
+}
 
-	vptID.clear();
-	vpt.clear();
-
-	ID = NOID;
+/*!
+@brief	copy constructor
+*/
+sKeyframe::sKeyframe(const sKeyframe& r)
+{
+	img = r.img.clone();
+	pose = r.pose;
+	vKptID = r.vKptID;
+	vKpt = r.vKpt;
+	vDesc = r.vDesc.clone();
+	vPtID = r.vPtID;
+	vPt = r.vPt;
+	ID = r.ID;
 }
 
 /*!
 @brief	clear data
 */
-void sBAData::clear(void)
+void sKeyframe::clear(void)
 {
-	vkeyframe.clear();
-	vkeyframeID.clear();
-	vpt3d.clear();
-	vvisibleID.clear();
+	vKptID.clear();
+	vKpt.clear();
+	vDesc.release();
+
+	vPtID.clear();
+	vPt.clear();
+
+	ID = NOID;
 }
 
 /*!
@@ -155,26 +154,28 @@ bool CMapData::CopytoBA(sBAData &data)
 			return false;
 		}
 
-		int prevsize = int(data.vpt3d.size());
-		data.vpt3d.resize(mvPt.size());
-		for (int i = prevsize, iend = int(mvPt.size()); i < iend; ++i){
-			data.vpt3d[i] = mvPt[i];
+		// set 3d points
+		int prevSize = int(data.vPt3d.size());
+		data.vPt3d.resize(mvPt.size());
+		for (int i = prevSize, iend = int(mvPt.size()); i < iend; ++i){
+			data.vPt3d[i] = mvPt[i];
 		}
 
 		int size = int(mvKf.size()) > PARAMS.BAKEYFRAMES ? PARAMS.BAKEYFRAMES : int(mvKf.size());
 
-		data.vkeyframe.clear();
-		data.vkeyframeID.clear();
+		data.vKeyframe.clear();
+		data.vKeyframeID.clear();
 
-		data.vkeyframe.resize(size);
-		data.vkeyframeID.resize(size);
-
+		data.vKeyframe.resize(size);
+		data.vKeyframeID.resize(size);
+		
+		// set keyframe data
 		for (int i = 0; i < size; ++i){
 			int id = int(mvKf.size()) - size + i;
-			data.vkeyframeID[i] = id;
-			data.vkeyframe[i].pose = mvKf[id].pose;
-			data.vkeyframe[i].vpt = mvKf[id].vpt;
-			data.vkeyframe[i].vptID = mvKf[id].vptID;
+			data.vKeyframeID[i] = id;
+			data.vKeyframe[i].pose = mvKf[id].pose;
+			data.vKeyframe[i].vPt = mvKf[id].vPt;
+			data.vKeyframe[i].vPtID = mvKf[id].vPtID;
 		}
 
 		mAdded = false;
@@ -189,7 +190,7 @@ bool CMapData::CopytoBA(sBAData &data)
 }
 
 /*!
-@brief		copy data from BA thread
+@brief		copy data from BA
 @param[in]	data	BA data
 */
 void CMapData::CopyfromBA(const sBAData &data)
@@ -197,14 +198,14 @@ void CMapData::CopyfromBA(const sBAData &data)
 	if (mvPt.size() != 0){
 
 		mMapMutex.lock();
-		for (int i = 0, iend = int(data.vvisibleID.size()); i < iend; ++i){
-			int id = data.vvisibleID[i];
-			mvPt[id] = data.vpt3d[id];
+		for (int i = 0, iend = int(data.vVisibleID.size()); i < iend; ++i){
+			int id = data.vVisibleID[i];
+			mvPt[id] = data.vPt3d[id];
 		}
 
-		for (int i = 0, iend = int(data.vkeyframeID.size()); i < iend; ++i){
-			int id = data.vkeyframeID[i];
-			mvKf[id].pose = data.vkeyframe[i].pose;
+		for (int i = 0, iend = int(data.vKeyframeID.size()); i < iend; ++i){
+			int id = data.vKeyframeID[i];
+			mvKf[id].pose = data.vKeyframe[i].pose;
 		}
 		mMapMutex.unlock();
 	}
@@ -213,22 +214,19 @@ void CMapData::CopyfromBA(const sBAData &data)
 /*!
 @brief	add keyframe
 @param[in]	kf		keyframe
-@param[in]	vdesc	descriptors
 */
-void CMapData::AddKeyframe(const sKeyframe &kf, const cv::Mat &vdesc)
+void CMapData::AddKeyframe(const sKeyframe &kf)
 {
 	mMapMutex.lock();
 
 	mvKf.push_back(kf);
 
 	sKeyframe &lkf = mvKf.back();
-
 	lkf.ID = int(mvKf.size()) - 1;		// set keyframe ID
-	vdesc.copyTo(lkf.vdesc);
 
 	mAdded = true;
 
-	LOGOUT("%d points in keyframes %d at %s\n", lkf.vkpt.size(), lkf.ID, __FUNCTION__);
+	LOGOUT("%d points in keyframes %d at %s\n", int(lkf.vKpt.size()), lkf.ID, __FUNCTION__);
 
 	mMapMutex.unlock();
 }
@@ -250,37 +248,37 @@ sKeyframe& CMapData::GetLastKeyframe(void)
 @param[out]	vid		vkpt's keypoint ID
 */
 void CMapData::UpdateLastKeyframe(
-	const std::vector<cv::Point3f> &vpt3d,
-	const std::vector<cv::KeyPoint> &vkpt,
-	const cv::Mat &vdesc,
-	std::vector<int> &vid
+	const std::vector<cv::Point3f> &vPt3d,
+	const std::vector<cv::KeyPoint> &vKpt,
+	const cv::Mat &vDesc,
+	std::vector<int> &vID
 	)
 {
 	mMapMutex.lock();
 
 	// get last keyframe
-	sKeyframe &lkf = mvKf.back();
+	sKeyframe &lKf = mvKf.back();
 
 	// get point ID
 	int pointID = int(mvPt.size());
 
 	// set point ID to points in the keyframe
-	for (int i = 0, iend = int(vpt3d.size()); i < iend; ++i, ++pointID){
-		mvPt.push_back(vpt3d[i]);
+	for (int i = 0, iend = int(vPt3d.size()); i < iend; ++i, ++pointID){
+		mvPt.push_back(vPt3d[i]);
 
-		lkf.vkpt.push_back(vkpt[i]);
-		lkf.vkptID.push_back(pointID);
+		lKf.vKpt.push_back(vKpt[i]);
+		lKf.vKptID.push_back(pointID);
 
-		lkf.vpt.push_back(vkpt[i].pt);
-		lkf.vptID.push_back(pointID);
+		lKf.vPt.push_back(vKpt[i].pt);
+		lKf.vPtID.push_back(pointID);
 
-		vid.push_back(pointID);
+		vID.push_back(pointID);
 	}
 
-	// compute descriptor
-	lkf.vdesc.push_back(vdesc);
+	// set descriptor
+	lKf.vDesc.push_back(vDesc);
 
-	LOGOUT("Added %d points Total keypoints %d in keyframe %d\n", int(vpt3d.size()), lkf.vkpt.size(), lkf.ID);
+	LOGOUT("Added %d points Total keypoints %d in keyframe %d\n", int(vPt3d.size()), int(lKf.vKpt.size()), lKf.ID);
 	
 	mMapMutex.unlock();
 }
@@ -302,25 +300,47 @@ const cv::Point3f& CMapData::GetPoint(const int id) const
 */
 const sKeyframe& CMapData::GetNearestKeyframe(const sPose &pose) const
 {
-	double dist = cv::norm(mvKf[0].pose.tvec - pose.tvec);
-	int ID = 0;
+	double dist = DBL_MAX;
+	int ID = NOID;
+	int ID2 = NOID;	// considering view direction
 
-	for (int i = 1, iend = int(mvKf.size()); i < iend; ++i){
+	for (int i = 0, iend = int(mvKf.size()); i < iend; ++i){
+
+		// check distance
 		double tmp = cv::norm(mvKf[i].pose.tvec - pose.tvec);
+
+		// check direction of optical axis
+		cv::Mat pR, kfR;
+		mvKf[i].pose.getR(kfR);
+		pose.getR(pR);
+
+		cv::Mat pOptAx = pR.inv().col(2);
+		cv::Mat kfOptAx = kfR.inv().col(2);
+
+		double innerProduct = pOptAx.dot(kfOptAx);
+
 		if (tmp < dist){
 			dist = tmp;
 			ID = i;
+
+			if (innerProduct > 0.0) {
+				ID2 = ID;
+			}
 		}
 	}
 
-	return mvKf[ID];
+	if (ID2 == NOID) {
+		ID2 = ID;
+	}
+
+	return mvKf[ID2];
 }
 
 /*!
-@brief			return randomly selected pose for relocalization
+@brief			return randomly selected keyframe pose for relocalization
 @param[out]		pose	pose
 */
-void CMapData::GetPoseforRelocalization(sPose &pose) const
+void CMapData::GetRandomKeyFramePose(sPose &pose) const
 {
 	int size = PARAMS.RELOCALHIST > int(mvKf.size()) ? int(mvKf.size()) : PARAMS.RELOCALHIST;
 	int val = rand() % size;
@@ -329,37 +349,9 @@ void CMapData::GetPoseforRelocalization(sPose &pose) const
 	pose = mvKf[index].pose;
 }
 
-/*!
-@brief			return good pose for relocalization
-@param[out]		pose	pose
-*/
-void CMapData::GetGoodPoseforRelocalization(sPose &pose) const
-{
-	int size = PARAMS.RELOCALHIST > int(mvKf.size()) ? int(mvKf.size()) : PARAMS.RELOCALHIST;
-
-	// select keyframe depending on number of keypoints in keyframe
-	int maxPts = -1;
-	for (int i = int(mvKf.size()) - size; i < int(mvKf.size()); ++i){
-		int pts = int(mvKf[i].vkpt.size());
-
-		if (maxPts < pts){
-			maxPts = pts;
-			pose = mvKf[i].pose;
-		}
-	}
-}
 
 /*!
-@brief			return map size
-@retval			map size
-*/
-int CMapData::GetSize(void) const
-{
-	return int(mvPt.size());
-}
-
-/*!
-@brief		constructor
+@brief		constructor (with default parameters)
 */
 sATAMParams::sATAMParams()
 {
@@ -368,15 +360,14 @@ sATAMParams::sATAMParams()
 	DESCDIST = 50.f;
 
 	BASEANGLE = 5.0;
-	BAKEYFRAMES = 4;
+	BAKEYFRAMES = 20;
 
-	PROJERR = 3.f;
+	PROJERR = 2.0;
 	MINPTS = 20;
-	PATCHSIZE = 17;
-	MATCHKEYFRAME = 0.4f;
+	PATCHSIZE = 15;
+	MATCHKEYFRAME = 0.3f;
 
-	GOODINIT = 0.9f;
-	RELOCALHIST = 5;
+	RELOCALHIST = 3;
 
 	VIDEONAME = strData + "movie.avi";
 	USEVIDEO = false;
@@ -409,8 +400,6 @@ void sATAMParams::loadParams(const std::string &name)
 		cv::write(fs, "MINPTS", MINPTS);
 		cv::write(fs, "PATCHSIZE", PATCHSIZE);
 		cv::write(fs, "MATCHKEYFRAME", MATCHKEYFRAME);
-
-		cv::write(fs, "GOODINIT", GOODINIT);
 		cv::write(fs, "RELOCALHIST", RELOCALHIST);
 
 		cv::write(fs, "USEVIDEO", int(USEVIDEO));
@@ -432,8 +421,6 @@ void sATAMParams::loadParams(const std::string &name)
 		MINPTS = node["MINPTS"];
 		PATCHSIZE = node["PATCHSIZE"];
 		MATCHKEYFRAME = node["MATCHKEYFRAME"];
-
-		GOODINIT = node["GOODINIT"];
 		RELOCALHIST = node["RELOCALHIST"];
 		
 		USEVIDEO = int(node["USEVIDEO"]) == 1 ? true : false;
@@ -458,26 +445,25 @@ sATAMData::sATAMData(void)
 */
 void sATAMData::clear(void)
 {
-	clearTrack();
+	clearAllTrack();
 
-	baData.clear();
 	map.Clear();
 	vKpt.clear();
 
 	transMat = cv::Mat::eye(cvSize(4, 4), CV_64F);
 
-	vposePair.clear();
+	vPosePair.clear();
 
-	havescale = false;
+	haveScale = false;
 }
 
 /*!
 @brief	clear tracking data
 */
-void sATAMData::clearTrack(void)
+void sATAMData::clearAllTrack(void)
 {
-	vtrack.clear();
-	vprevpt.clear();
+	vTrack.clear();
+	vPrevPt.clear();
 }
 
 /*!
@@ -486,24 +472,21 @@ void sATAMData::clearTrack(void)
 */
 void sATAMData::clearTrack(const int ID)
 {
-	for (std::list<sTrack>::iterator it = vtrack.begin(),
-		itend = vtrack.end(); it != itend;){
+	// remove point if its ID is ID
+	for (std::list<sTrack>::iterator it = vTrack.begin(); it != vTrack.end();){
 		if (it->ptID == ID){
-			it = vtrack.erase(it);
+			it = vTrack.erase(it);
 		}
 		else{
 			++it;
 		}
-		if (it == vtrack.end()){
-			break;
-		}
 	}
 
-	vprevpt.clear();
-
-	for (std::list<sTrack>::iterator it = vtrack.begin(),
-		itend = vtrack.end(); it != itend; ++it){
-		vprevpt.push_back(it->vpt.back());
+	// set points in previous image
+	vPrevPt.clear();
+	for (std::list<sTrack>::iterator it = vTrack.begin(),
+		itend = vTrack.end(); it != itend; ++it){
+		vPrevPt.push_back(it->vPt.back());
 	}
 }
 
@@ -514,7 +497,7 @@ void sATAMData::clearTrack(const int ID)
 void sATAMData::addTrack(const sTrack &in)
 {
 	const cv::Point2f &pt = in.kpt.pt;
-	vtrack.push_back(in);
-	vtrack.back().vpt.push_back(pt);
-	vprevpt.push_back(pt);
+	vTrack.push_back(in);
+	vTrack.back().vPt.push_back(pt);
+	vPrevPt.push_back(pt);
 }

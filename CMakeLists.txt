@@ -21,34 +21,22 @@ endif( )
 ######################################
 
 # OpenCV
-set( BUILD_SHARED_LIBS "ON" )
 find_package( OpenCV REQUIRED )
-include_directories( ${OpenCV_INCLUDE_DIRS} )
+include_directories(${OpenCV_INCLUDE_DIRS})
 
-option( USE_BA "Use bundle adjustment" ON )
-
-if( USE_BA )
-	# for cvsba
-	find_library( LAPACK_LIB NAMES lapack )
-	find_library( BLAS_LIB NAMES blas )
-	find_library( F2C_LIB NAMES f2c )
-
-	set( CVSBA_LIBS ${LAPACK_LIB} ${F2C_LIB} ${BLAS_LIB} )
-	message( STATUS "LAPACK_LIB = ${LAPACK_LIB}" )
-	message( STATUS "BLAS_LIB = ${BLAS_LIB}" )
-	message( STATUS "F2C_LIB = ${F2C_LIB}" )
-endif( )
+# CLAPACK
+find_package( CLAPACK REQUIRED )
+set( CLAPACK_LIBS lapack f2c blas )
 
 # point grey camera
 option( USE_PGR "Use point grey camera" OFF )
-if( USE_PGR )
-	find_path( PGR_INCLUDE_DIR NAMES FlyCapture2.h )
-	find_library( PGR_LIB NAMES flycapture )
 
-	message( STATUS "FlyCapture2.h is in ${PGR_INCLUDE_DIR}" )
-	include_directories( ${PGR_INCLUDE_DIR} )
-	message( STATUS "PGR_LIB = ${PGR_LIB}" )
-	set( CAM_LIB ${PGR_LIB} )
+if( USE_PGR )
+	find_path( PGR_INCLUDE_DIRS NAMES FlyCapture2.h )
+	find_library( PGR_LIBS NAMES flycapture2 )
+
+	include_directories( ${PGR_INCLUDE_DIRS} )
+	set( CAM_LIBS ${PGR_LIBS} )
     add_definitions( -DUSEPGR )
 endif( )
 
@@ -59,9 +47,8 @@ endif( )
 # chessboard or dot pattern
 option( USE_CHESSBOARD "Use chessboard" ON )
 
-if( USE_BA )
-	option( USE_MULTITHREAD "Use multi thread" ON )
-endif( )
+# use multi threads or not
+option( USE_MULTITHREAD "Use multi thread" ON )
 
 # show log or not
 option( SHOW_LOG "Show logs" ON )
@@ -79,6 +66,7 @@ set( PROJ_SHARED_DIR ${CMAKE_SOURCE_DIR}/src )
 set( PROJ_SHARED_DATADIR_DIR ${PROJ_SHARED_DIR}/datadir )
 set( PROJ_SHARED_DATADIR_INCLUDE ${PROJ_SHARED_DATADIR_DIR}/DirectoryConfig.h )
 configure_file ( "${CMAKE_SOURCE_DIR}/DataDirectory.h.in" ${PROJ_SHARED_DATADIR_INCLUDE} )
+include_directories(${PROJ_SHARED_DATADIR_DIR})
 
 # camera
 set( PROJ_SHARED_CAMERA_DIR ${PROJ_SHARED_DIR}/camera )
@@ -100,12 +88,10 @@ set( PROJ_SHARED_DETECTOR_DIR ${PROJ_SHARED_DIR}/detector )
 file( GLOB PROJ_SHARED_DETECTOR_SOURCE ${PROJ_SHARED_DETECTOR_DIR}/*.cpp )
 file( GLOB PROJ_SHARED_DETECTOR_INCLUDE ${PROJ_SHARED_DETECTOR_DIR}/*.h )
 
-# bundle adjustment
-if( USE_BA )
-	set( PROJ_SHARED_CVSBA_DIR ${PROJ_SHARED_DIR}/cvsba )
-	file( GLOB PROJ_SHARED_CVSBA_SOURCE ${PROJ_SHARED_CVSBA_DIR}/*.cpp ${PROJ_SHARED_CVSBA_DIR}/*.c)
-	file( GLOB PROJ_SHARED_CVSBA_INCLUDE ${PROJ_SHARED_CVSBA_DIR}/*.h )
-endif()
+# cvsba
+set( PROJ_SHARED_CVSBA_DIR ${PROJ_SHARED_DIR}/cvsba )
+file( GLOB PROJ_SHARED_CVSBA_SOURCE ${PROJ_SHARED_CVSBA_DIR}/*.cpp ${PROJ_SHARED_CVSBA_DIR}/*.c)
+file( GLOB PROJ_SHARED_CVSBA_INCLUDE ${PROJ_SHARED_CVSBA_DIR}/*.h )
 
 # calibration
 set( PROJ_SHARED_CALIBRATION_DIR ${PROJ_SHARED_DIR}/calibration )

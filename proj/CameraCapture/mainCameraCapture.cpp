@@ -43,7 +43,7 @@ int main(int argc, char **argv)
 	const char window[256] = "camera";
 	cv::namedWindow(window);
 
-	bool saveflag = false;
+	bool saveFlag = false;
 
 	printf("Press space to start and stop saving video\n");
 
@@ -53,17 +53,17 @@ int main(int argc, char **argv)
 		// show image
 		cv::imshow(window, img);
 
-		if (saveflag){
+		if (saveFlag){
 			cam.SaveImage();
 		}
 
 		int key = cv::waitKey(10);
-		if (key == 0x1b){	// ESC
+		if (key == 'q'){	// ESC
 			break;
 		}
 		else if (key == ' '){
-			saveflag = !saveflag;
-			if (saveflag){
+			saveFlag = !saveFlag;
+			if (saveFlag){
 				printf("start\n");
 			}
 			else{
