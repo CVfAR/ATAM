@@ -122,10 +122,6 @@ void CATAM::mainLoop(void)
 		LOGOUT("--frame %d--\n", mFrameNumber);
 		++mFrameNumber;
 
-		if (mFrameNumber == 50 || mFrameNumber == 100 || mFrameNumber == 330 || mFrameNumber == 450) {
-			operation(' ');
-		}
-
 		// get keyboard input
 		int mouse = mMouse;
 

@@ -1,13 +1,13 @@
 # About
 
-Hideaki Uchiyama, Takafumi Taketomi, Sei Ikeda and Joao Paulo Silva do Monte Lima, "Abecedary Tracking and Mapping: a Toolkit for Tracking Competitions," Proceedings of the 14th IEEE International Symposium on Mixed and Augmented Reality, pp.xx-xx, 2015.
+Hideaki Uchiyama, Takafumi Taketomi, Sei Ikeda and Joao Paulo Silva do Monte Lima, "Abecedary Tracking and Mapping: a Toolkit for Tracking Competitions," Proceedings of the 14th IEEE International Symposium on Mixed and Augmented Reality, pp.198-199, 2015.
 
 # Dependency
 - OpenCV 3.1
 - cvsba
 - LAPACK
 
-# Installation on Windows
+# Installation on Windows 64 bit
 ## 1. Download and install following software
 
 - CMake 2.8 (or other versions may be OK) from http://www.cmake.org/
