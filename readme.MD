@@ -7,7 +7,7 @@ Hideaki Uchiyama, Takafumi Taketomi, Sei Ikeda and Joao Paulo Silva do Monte Lim
 - cvsba
 - LAPACK
 
-# Installation on Windows 64 bit
+# Installation on Windows 64 bit (may not work on 32 bit)
 ## 1. Download and install following software
 
 - CMake 2.8 (or other versions may be OK) from http://www.cmake.org/
@@ -56,14 +56,14 @@ Hideaki Uchiyama, Takafumi Taketomi, Sei Ikeda and Joao Paulo Silva do Monte Lim
 ## 1. CameraCapture
 - Open ATAM/build/proj/CameraCapture/CameraCapture.sln, compile and run it
  - May need to change mDeviceID to 1 or 2 at line 12 in Cam.cpp for a USB camera on laptop
-- Press space to start saving video and press space again to stop saving, and press ESC to close
+- Press space to start saving video and press space again to stop saving, and press q to close
 - Check ATAM/data/movie.avi
 
 ## 2. CameraCalibration
 - Print opencv/sources/doc/pattern.png on a A4 paper (acircles_pattern.png if uncheck USE\_CHESSBOARD)
  - Need to change size in CCalibration::CCalibration() or call CCalibration::SetSize() if use different size
 - Open ATAM/build/proj/CameraCalibration/CameraCalibration.sln, compile and run it
-- Press space to capture images from different viewpoints several times, and press ESC to close
+- Press space to capture images from different viewpoints several times, and press q to close
 - Check ATAM/data/camera.xml
 
 ## 3. ATAM
@@ -85,7 +85,7 @@ Hideaki Uchiyama, Takafumi Taketomi, Sei Ikeda and Joao Paulo Silva do Monte Lim
  - Press n if relocalization not work (manually change view for relocalization)
  - Press c to visualize next challenge point
  - Press r to reset
- - Press ESC to close
+ - Press q to close
 
 # Tips for ATAM
 
